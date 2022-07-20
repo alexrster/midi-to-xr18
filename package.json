@@ -1,0 +1,25 @@
+{
+  "name": "midi-to-xr18",
+  "version": "0.0.1",
+  "description": "The tool for controlling Behringer XR-18 with 3rd party MIDI devices",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "AY",
+    "XR18",
+    "MIDI",
+    "OSC"
+  ],
+  "author": "AY",
+  "license": "MIT",
+  "dependencies": {
+    "command-line-args": "^5.2.0",
+    "easymidi": "^2.0.5",
+    "fs": "^0.0.1-security",
+    "io": "^1.0.4",
+    "mqtt": "^4.3.4",
+    "osc": "^2.4.2"
+  }
+}
