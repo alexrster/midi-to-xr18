@@ -100,6 +100,15 @@ udpPort.on('ready', () => {
   loadData();
 });
 
+udpPort.on("error", function (error) {
+  console.log("An error occurred on UDP client: ", error.message);
+});
+
+udpPort.on("close", () => {
+  console.log("OSC UDP port closed remotely! Exiting in 1 sec...");
+  setTimeout(() => { process.exit(-2); }, 1000);
+});
+
 midiDevice.on('cc', msg => {
   console.log(msg);
   let oscMap = mappings[msg._type][msg.controller] || null;
