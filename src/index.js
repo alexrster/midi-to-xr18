@@ -23,7 +23,7 @@ if (!!args['midi-list-devices']) {
 
 const mappings = require(args.mappings);
 
-const midiDeviceName = args['midi-device'];
+const midiDeviceNameParam = args['midi-device'];
 const xr18Addr = args['xr18-address'];
 const xr18Port = args['xr18-port'];
 
@@ -33,8 +33,9 @@ const udpPort = new osc.UDPPort({
   metadata: true
 });
 
-let pubSub;
+let midiDeviceName = easymidi.getInputs().filter(x => x.startsWith(midiDeviceNameParam))[0];
 
+let pubSub;
 let midiDevice;
 try {
   midiDevice = new easymidi.Input(midiDeviceName);
