@@ -9,6 +9,7 @@ const optionDefinitions = [
   { name: 'mappings', alias: 'm', type: String, defaultOption: true, defaultValue: '../mappings.js' },
   { name: 'midi-list-devices', alias: 'l', type: Boolean },
   { name: 'midi-device', alias: 'd', type: String, defaultValue: 'WORLDE easy CTRL' },
+  { name: 'midi-out-device', alias: 'o', type: String, defaultValue: 'WORLDE easy CTRL:WORLDE easy CTRL MIDI 1 20:0' },
   { name: 'xr18-address', alias: 'a', type: String, defaultValue: '10.9.9.215' },
   { name: 'xr18-port', alias: 'p', type: Number, defaultValue: 10024 },
   { name: 'mqtt-url', alias: 'b', type: String, defaultValue: 'tcp://10.9.9.96:1883' },
@@ -17,7 +18,11 @@ const optionDefinitions = [
 const args = commandLineArgs(optionDefinitions);
 
 if (!!args['midi-list-devices']) {
+  console.log("INPUT DEVICES");
   console.log(easymidi.getInputs());
+
+  console.log("\nOUTPUT DEVICES");
+  console.log(easymidi.getOutputs());
   process.exit(0);
 }
 
@@ -33,12 +38,13 @@ const udpPort = new osc.UDPPort({
   metadata: true
 });
 
-let midiDeviceName = easymidi.getInputs().filter(x => x.startsWith(midiDeviceNameParam))[0];
+var midiDeviceName = easymidi.getInputs().filter(x => x.startsWith(midiDeviceNameParam))[0];
 
-let pubSub;
-let midiDevice;
+var pubSub;
+var midiDevice, midiOutDevice;
 try {
   midiDevice = new easymidi.Input(midiDeviceName);
+  midiOutDevice = new easymidi.Output(args['midi-out-device']);
 }
 catch (error) {
   console.error(error);
@@ -47,8 +53,8 @@ catch (error) {
   process.exit(-1);
 }
 
-let state = {};
-let stateSaveTimeout = null;
+var state = {};
+var stateSaveTimeout = null;
 function saveState(oscData, midiData) {
   state[oscData.address] = { osc: oscData, midi: midiData };
 
@@ -58,6 +64,7 @@ function saveState(oscData, midiData) {
     fs.writeFile('./state_data.json', JSON.stringify(state), (err) => !!err ? console.log("Error saving state to './stat_data.json': ", err) : 0);
   }, 1000);
 }
+
 
 function loadData() {
   fs.readFile('./state_data.json', function (err, data) {
@@ -71,7 +78,6 @@ function loadData() {
 
     mappings.setState(state);
 
-    const midiOutDevice = new easymidi.Output(midiDeviceName);
     for (var i in state) {
       console.log("Recover state for:", state[i]);
       try {
@@ -81,8 +87,6 @@ function loadData() {
         console.log("Error sending MIDI command: ", e);
       }
     }
-  
-    midiOutDevice.close();
   });
 }
 
@@ -95,7 +99,9 @@ udpPort.on('message', function (oscMsg, timeTag, info) {
 udpPort.on('ready', () => {
   // udpPort.send({ address: '/info' }, xr18Addr, xr18Port);
   // udpPort.send({ address: '/status' }, xr18Addr, xr18Port);
-  // udpPort.send({ address: '/xremote' }, xr18Addr, xr18Port);
+
+  udpPort.send({ address: '/xremote' }, xr18Addr, xr18Port);
+  setInterval(function() { udpPort.send({ address: '/xremote' }, xr18Addr, xr18Port); }, 8000);
 
   loadData();
 });
@@ -162,20 +168,43 @@ pubSub.on('connect', () => {
     console.log('Subscribing to MQTT topic: "' + topic + '"');
     pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
   }
+
+  for (var i in mappings.midi) {
+    let topic = args["mqtt-topic"] + i;
+
+    console.log('Subscribing to MQTT topic: "' + topic + '"');
+    pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+  }
 });
 
 pubSub.on('message', (t, m) => {
   let ms = m.toString();
   console.log('Received message from "' + t + '"', ms);
 
-  try {
-    let jm = JSON.parse(ms);
+  if (!!t && t.endsWith('/set')) {
+    try {
+      let jm = JSON.parse(ms);
 
-    udpPort.send(jm, xr18Addr, xr18Port);
-    // saveState(data, msg);
+      udpPort.send(jm, xr18Addr, xr18Port);
+      // saveState(data, msg);
+    }
+    catch (error) {
+      console.warn("Error sending command from MQTT to XR18!", error);
+    }
   }
-  catch (error) {
-    console.warn("Error sending command from MQTT to XR18!", error);
+  else {
+    try {
+      let jm = JSON.parse(ms);
+      let ch = t.replace(args["mqtt-topic"], "");
+      let v = mappings.midi[ch](jm.value);
+      if (!!v) {
+	console.log('Found midi mapping! response=', JSON.stringify(v));
+	midiOutDevice.send(v._type, v.data);
+      }
+    }
+    catch (error) {
+      console.warn("Error sending command to MIDI!", error);
+    }
   }
 });
 

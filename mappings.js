@@ -30,6 +30,15 @@ const oscMapToFloatFromPathMax = (path) => ({
   }
 });
 
+const oscToMidiCcCommandFactory = (controller, channel) => (value) => ({
+  "_type": "cc",
+  "data": {
+    "controller": controller,
+    "value": value > 0 ? 127 : 0,
+    "channel": (channel || 0)
+  }
+});
+
 module.exports = {
   "setState": s => state = s,
   "cc": {
@@ -51,5 +60,10 @@ module.exports = {
 
     "14": oscMapToFloatFromPathMax('/ch/01/mix/fader'),    // 1 - fader
     "15": oscMapToFloatFromPathMax('/ch/03/mix/fader')     // 2 - fader
+  },
+  "midi": {
+    "/ch/01/mix/on": oscToMidiCcCommandFactory(23), 
+    "/ch/03/mix/on": oscToMidiCcCommandFactory(24),
+    "/ch/05/mix/on": oscToMidiCcCommandFactory(25)
   }
 };
