@@ -39,12 +39,21 @@ const oscToMidiCcCommandFactory = (controller, channel) => (value) => ({
   }
 });
 
+const oscToMidiNoteOnCommandFactory = (note, channel) => (value) => ({
+  "_type": "noteon",
+  "data": {
+    "note": note,
+    "velocity": value > 0 ? 127 : 0,
+    "channel": (channel || 0)
+  }
+});
+
 module.exports = {
   "setState": s => state = s,
   "cc": {
     "3":  oscMapToFloatTarget('/ch/01/mix/fader'),         // 1 - fader
     "4":  oscMapToFloatTarget('/ch/03/mix/fader'),         // 2 - fader
-    "5":  oscMapToFloatTarget('/ch/05/mix/fader'),         // 3 - fader
+//    "5":  oscMapToFloatTarget('/ch/05/mix/fader'),         // 3 - fader
     "6":  oscMapToFloatTarget('/ch/09/mix/fader'),         // 4 - fader
     "7":  oscMapToFloatTarget('/ch/13/mix/fader'),         // 5 - fader
     "8":  oscMapToFloatTarget('/ch/15/mix/fader'),         // 6 - fader
@@ -62,8 +71,8 @@ module.exports = {
     "15": oscMapToFloatFromPathMax('/ch/03/mix/fader')     // 2 - fader
   },
   "midi": {
-    "/ch/01/mix/on": oscToMidiCcCommandFactory(23), 
-    "/ch/03/mix/on": oscToMidiCcCommandFactory(24),
-    "/ch/05/mix/on": oscToMidiCcCommandFactory(25)
+    "/ch/01/mix/on": oscToMidiNoteOnCommandFactory(23), 
+    "/ch/03/mix/on": oscToMidiNoteOnCommandFactory(24),
+    "/ch/05/mix/on": oscToMidiNoteOnCommandFactory(25)
   }
 };

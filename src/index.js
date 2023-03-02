@@ -9,10 +9,10 @@ const optionDefinitions = [
   { name: 'mappings', alias: 'm', type: String, defaultOption: true, defaultValue: '../mappings.js' },
   { name: 'midi-list-devices', alias: 'l', type: Boolean },
   { name: 'midi-device', alias: 'd', type: String, defaultValue: 'WORLDE easy CTRL' },
-  { name: 'midi-out-device', alias: 'o', type: String, defaultValue: 'WORLDE easy CTRL:WORLDE easy CTRL MIDI 1 20:0' },
+  { name: 'midi-out-device', alias: 'o', type: String, defaultValue: 'WORLDE easy CTRL:WORLDE easy CTRL MIDI 1 24:0' },
   { name: 'xr18-address', alias: 'a', type: String, defaultValue: '10.9.9.215' },
   { name: 'xr18-port', alias: 'p', type: Number, defaultValue: 10024 },
-  { name: 'mqtt-url', alias: 'b', type: String, defaultValue: 'tcp://10.9.9.96:1883' },
+  { name: 'mqtt-url', alias: 'b', type: String, defaultValue: 'tcp://rabbitmq.in.qx.zone:1883' },
   { name: 'mqtt-topic', alias: 't', type: String, defaultValue: 'dev/midi-to-xr18' }
 ];
 const args = commandLineArgs(optionDefinitions);
@@ -37,6 +37,9 @@ const udpPort = new osc.UDPPort({
   localPort: 10023,
   metadata: true
 });
+
+var midiCcTimers = {};
+const midiCcThrottlingMs = 20;
 
 var midiDeviceName = easymidi.getInputs().filter(x => x.startsWith(midiDeviceNameParam))[0];
 
@@ -115,7 +118,9 @@ udpPort.on("close", () => {
   setTimeout(() => { process.exit(-2); }, 1000);
 });
 
-midiDevice.on('cc', msg => {
+const onMidiCc = function(msg) {
+  midiCcTimers[msg.controller] = null;
+
   console.log(msg);
   let oscMap = mappings[msg._type][msg.controller] || null;
   if (oscMap == null) return;
@@ -152,6 +157,19 @@ midiDevice.on('cc', msg => {
   catch (error) {
     console.warn("Error publishing to MQTT!", error);
   }
+};
+
+midiDevice.on('cc', msg => {
+  if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
+  midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, msg);
+});
+
+midiDevice.on('noteon', msg => {
+  console.log(msg);
+});
+
+midiDevice.on('noteoff', msg => {
+  console.log(msg);
 });
 
 midiDevice.on('program', msg => console.log(msg));
@@ -201,6 +219,8 @@ pubSub.on('message', (t, m) => {
 	console.log('Found midi mapping! response=', JSON.stringify(v));
 	midiOutDevice.send(v._type, v.data);
       }
+
+      if (ch == '/ch/05/mix/on') midiOutDevice.send('noteon', { channel: 0, note: 25, velocity: !!jm.value ? 127 : 0 });
     }
     catch (error) {
       console.warn("Error sending command to MIDI!", error);

@@ -24,4 +24,4 @@ yarn-error.log*
 .eslintcache
 .eslintcache
 
-state_data.json
+/state_data.json
