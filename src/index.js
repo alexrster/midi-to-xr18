@@ -123,14 +123,28 @@ function loadData() {
     var midiIn = getMidiIn(d);
     if (!!midiIn && !midiIn['setupComplete']) {
       var midiCcTimers = {};
+      var midiDev = d;
 
       console.log("Setup MIDI input device: name=", d);
       var onMidiCc = function(msg) {
         console.log("Handling MIDI message: ", msg);
         midiCcTimers[msg.controller] = null;
-      
-        let oscMap = mappings.midi[d][msg._type][msg.controller] || null;
-        if (oscMap == null) return;
+
+        if (!mappings.midi[midiDev]) {
+          console.log("No MIDI device mappings found: device=", midiDev);
+          return;
+        }
+
+        if (!mappings.midi[midiDev][msg._type]) {
+          console.log("No MIDI message type mappings found for the device: messageType=" + msg._type + "; device=", midiDev);
+          return;
+        }
+
+        var oscMap = mappings.midi[midiDev][msg._type][msg.controller];
+        if (!oscMap) {
+          console.log("Not found OSC mapping: 'mappings.midi[" + midiDev + "][" + msg._type + "][" + msg.controller + "]'=", oscMap);
+          return;
+        }
       
         let type = oscMap.oscValueType;
         let val = oscMap.valueConverter(msg.value);
