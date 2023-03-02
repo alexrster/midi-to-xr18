@@ -42,6 +42,7 @@ var midiCcTimers = {};
 const midiCcThrottlingMs = 20;
 
 var midiDeviceName = easymidi.getInputs().filter(x => x.startsWith(midiDeviceNameParam))[0];
+var midiOutDeviceNames = easymidi.getOutputs();
 
 var pubSub;
 var midiDevice, midiOutDevice;
@@ -91,6 +92,24 @@ function loadData() {
       }
     }
   });
+}
+
+var midiOuts = {};
+function getMidiOut(name) {
+  if (!!name) {
+    var dev = midiOuts[name];
+    if (!!dev) return dev;
+
+    try {
+      midiOuts[name] = new easymidi.Output(midiOutDeviceNames.filter(x => x.startsWith(name))[0]);
+      return midiOuts[name];
+    }
+    catch (e) {
+      console.warn('Unable to open output device: name="' + name +  '", error=', e);
+    }
+  }
+
+  return midiOutDevice;
 }
 
 udpPort.open();
@@ -214,13 +233,12 @@ pubSub.on('message', (t, m) => {
     try {
       let jm = JSON.parse(ms);
       let ch = t.replace(args["mqtt-topic"], "");
-      let v = mappings.midi[ch](jm.value);
+      let v = mappings.midi[ch]['data'](jm.value);
+      let d = getMidiOut(mappings.midi[ch]['dev']);
       if (!!v) {
-	console.log('Found midi mapping! response=', JSON.stringify(v));
-	midiOutDevice.send(v._type, v.data);
+        console.log('Found midi mapping! response=', JSON.stringify(v));
+        d.send(v._type, v.data);
       }
-
-      if (ch == '/ch/05/mix/on') midiOutDevice.send('noteon', { channel: 0, note: 25, velocity: !!jm.value ? 127 : 0 });
     }
     catch (error) {
       console.warn("Error sending command to MIDI!", error);
