@@ -119,7 +119,7 @@ function getMidiOut(name) {
 function loadData() {
   for (var d in mappings.midi) {
     var midiIn = getMidiIn(d);
-    if (!!midiIn) {
+    if (!!midiIn && !midiIn['setupComplete']) {
       var midiCcTimers = {};
 
       var onMidiCc = function(msg) {
@@ -162,7 +162,7 @@ function loadData() {
           console.warn("Error publishing to MQTT!", error);
         }
       };
-      
+
       midiIn.on('cc', msg => {
         if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
         midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, msg);
@@ -177,9 +177,12 @@ function loadData() {
       });
       
       midiIn.on('program', msg => console.log(msg));
+
+      midiIn['setupComplete'] = true;
     }
   }
 
+  return;
   fs.readFile('./state_data.json', function (err, data) {
     if(!!err) {
       console.log("Error saving state to './stat_data.json': ", err);
