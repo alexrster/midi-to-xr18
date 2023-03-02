@@ -126,23 +126,25 @@ function loadData() {
       var midiDev = d;
 
       console.log("Setup MIDI input device: name=", d);
-      var onMidiCc = function(msg) {
+      var onMidiCc = function(o) {
+        let msg = o.msg;
+        let dev = o.dev;
         console.log("Handling MIDI message: ", msg);
         midiCcTimers[msg.controller] = null;
 
-        if (!mappings.midi[midiDev]) {
-          console.log("No MIDI device mappings found: device=", midiDev);
+        if (!mappings.midi[dev]) {
+          console.log("No MIDI device mappings found: device=", dev);
           return;
         }
 
-        if (!mappings.midi[midiDev][msg._type]) {
-          console.log("No MIDI message type mappings found for the device: messageType=" + msg._type + "; device=", midiDev);
+        if (!mappings.midi[dev][msg._type]) {
+          console.log("No MIDI message type mappings found for the device: messageType=" + msg._type + "; device=", dev);
           return;
         }
 
-        var oscMap = mappings.midi[midiDev][msg._type][msg.controller];
+        var oscMap = mappings.midi[dev][msg._type][msg.controller];
         if (!oscMap) {
-          console.log("Not found OSC mapping: 'mappings.midi[" + midiDev + "][" + msg._type + "][" + msg.controller + "]'=", oscMap);
+          console.log("Not found OSC mapping: 'mappings.midi[" + dev + "][" + msg._type + "][" + msg.controller + "]'=", oscMap);
           return;
         }
       
@@ -182,7 +184,7 @@ function loadData() {
 
       midiIn.on('cc', msg => {
         if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-        midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, msg);
+        midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, { msg: msg, dev: midiDev});
       });
       
       midiIn.on('noteon', msg => {
@@ -267,6 +269,7 @@ udpPort.on("close", () => {
 });
 
 // MQTT
+var subsriptions = {};
 pubSub = mqtt.connect(args['mqtt-url'], { clientId: "midi-to-xr18" });
 pubSub.on('connect', () => {
   console.log('MQTT connected!');
@@ -277,8 +280,11 @@ pubSub.on('connect', () => {
         let el = mappings.midi[d].cc[i];
         let topic = args["mqtt-topic"] + el.oscPath + "/set";
 
-        console.log('Subscribing to MQTT topic: "' + topic + '"');
-        pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+        if (!!subsriptions[topic]) {
+          subsriptions[topic] = true;
+          console.log('Subscribing to MQTT topic: "' + topic + '"');
+          pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+        }
       }
     }
 
@@ -287,8 +293,11 @@ pubSub.on('connect', () => {
         let el = mappings.midi[d].noteon[i];
         let topic = args["mqtt-topic"] + el.oscPath + "/set";
 
-        console.log('Subscribing to MQTT topic: "' + topic + '"');
-        pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+        if (!!subsriptions[topic]) {
+          subsriptions[topic] = true;
+          console.log('Subscribing to MQTT topic: "' + topic + '"');
+          pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+        }
       }
     }
 
@@ -297,8 +306,11 @@ pubSub.on('connect', () => {
         let el = mappings.midi[d].noteoff[i];
         let topic = args["mqtt-topic"] + el.oscPath + "/set";
 
-        console.log('Subscribing to MQTT topic: "' + topic + '"');
-        pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+        if (!!subsriptions[topic]) {
+          subsriptions[topic] = true;
+          console.log('Subscribing to MQTT topic: "' + topic + '"');
+          pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+        }
       }
     }
   }
