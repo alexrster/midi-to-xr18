@@ -97,15 +97,20 @@ function loadData() {
 var midiOuts = {};
 function getMidiOut(name) {
   if (!!name) {
-    var dev = midiOuts[name];
-    if (!!dev) return dev;
-
-    try {
-      midiOuts[name] = new easymidi.Output(midiOutDeviceNames.filter(x => x.startsWith(name))[0]);
+    if (!!midiOuts[name]) {
+      console.log("Resolve MIDI output device from cache: name=" + name + "; device=" + midiOuts[name]);
       return midiOuts[name];
     }
-    catch (e) {
-      console.warn('Unable to open output device: name="' + name +  '", error=', e);
+
+    console.log("Try find MIDI output device: name=" + name);
+    try {
+      var devName = midiOutDeviceNames.filter(x => x.startsWith(name))[0];
+      console.log("Found real MIDI output device name: ", devName);
+      midiOuts[name] = new easymidi.Output(devName);
+      return midiOuts[name];
+    }
+    catch (error) {
+      console.warn('Unable to find or open MIDI output device: name="' + name +  '", error=', error);
     }
   }
 
