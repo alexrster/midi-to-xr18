@@ -148,7 +148,7 @@ function loadData() {
         console.log("Mapping found! Sending command to XR18: ", data);
         try {
           udpPort.send(data, xr18Addr, xr18Port);
-          saveState(data, msg);
+          // saveState(data, msg);
         }
         catch (error) {
           console.warn("Error sending command to XR18!", error);
