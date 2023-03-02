@@ -117,11 +117,14 @@ function getMidiOut(name) {
 }
 
 function loadData() {
+  console.log('Loading configuration and mappings');
   for (var d in mappings.midi) {
+    console.log("Processing MIDI mappings for device: name=", d);
     var midiIn = getMidiIn(d);
     if (!!midiIn && !midiIn['setupComplete']) {
       var midiCcTimers = {};
 
+      console.log("Setup MIDI input device: name=", d);
       var onMidiCc = function(msg) {
         midiCcTimers[msg.controller] = null;
       
@@ -233,10 +236,11 @@ udpPort.on('ready', () => {
   // udpPort.send({ address: '/info' }, xr18Addr, xr18Port);
   // udpPort.send({ address: '/status' }, xr18Addr, xr18Port);
 
+  console.log('Connection to XR18 established!');
+  loadData();
+
   udpPort.send({ address: '/xremote' }, xr18Addr, xr18Port);
   setInterval(function() { udpPort.send({ address: '/xremote' }, xr18Addr, xr18Port); }, 8000);
-
-  loadData();
 });
 
 udpPort.on("error", function (error) {
@@ -255,7 +259,7 @@ pubSub.on('connect', () => {
 
   for (var d in mappings.midi) {
     for (var i in mappings.midi[d].cc) {
-      let el = mappings.cc[i];
+      let el = mappings.midi[d].cc[i];
       let topic = args["mqtt-topic"] + el.oscPath + "/set";
 
       console.log('Subscribing to MQTT topic: "' + topic + '"');
