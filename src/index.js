@@ -126,6 +126,7 @@ function loadData() {
 
       console.log("Setup MIDI input device: name=", d);
       var onMidiCc = function(msg) {
+        console.log("Handling MIDI message: ", msg);
         midiCcTimers[msg.controller] = null;
       
         console.log(msg);
