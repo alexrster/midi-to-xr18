@@ -71,8 +71,8 @@ module.exports = {
     "15": oscMapToFloatFromPathMax('/ch/03/mix/fader')     // 2 - fader
   },
   "midi": {
-    "/ch/01/mix/on": { "data": oscToMidiNoteOnCommandFactory(23), "dev": "LPD8" },
-    "/ch/03/mix/on": { "data": oscToMidiNoteOnCommandFactory(24), "dev": "LPD8" },
-    "/ch/05/mix/on": { "data": oscToMidiNoteOnCommandFactory(25), "dev": "LPD8" }
+    "/ch/01/mix/on": { "data": oscToMidiNoteOnCommandFactory(44), "dev": "LPD8" },
+    "/ch/03/mix/on": { "data": oscToMidiNoteOnCommandFactory(45), "dev": "LPD8" },
+    "/ch/05/mix/on": { "data": oscToMidiNoteOnCommandFactory(47), "dev": "LPD8" }
   }
 };
