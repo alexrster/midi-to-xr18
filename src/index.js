@@ -116,6 +116,63 @@ function getMidiOut(name) {
   return midiOutDevice;
 }
 
+function onMidiCc(o) {
+  let msg = o.msg;
+  let dev = o.dev;
+  let timers = o.timers;
+  console.log("Handling MIDI message: ", msg);
+  timers[msg.controller] = null;
+
+  if (!mappings.midi[dev]) {
+    console.log("No MIDI device mappings found: device=", dev);
+    return;
+  }
+
+  if (!mappings.midi[dev][msg._type]) {
+    console.log("No MIDI message type mappings found for the device: messageType=" + msg._type + "; device=", dev);
+    return;
+  }
+
+  var oscMap = mappings.midi[dev][msg._type][msg.controller];
+  if (!oscMap) {
+    console.log("Not found OSC mapping: 'mappings.midi[" + dev + "][" + msg._type + "][" + msg.controller + "]'=", oscMap);
+    return;
+  }
+
+  let type = oscMap.oscValueType;
+  let val = oscMap.valueConverter(msg.value);
+  let rawVal = msg.value;
+  let addr = oscMap.oscPath;
+
+  var data = {
+    address: addr,
+    args: [{
+        type: type,
+        value: val
+    }]
+  };
+
+  console.log("Mapping found! Sending command to XR18: ", data);
+  try {
+    udpPort.send(data, xr18Addr, xr18Port);
+    // saveState(data, msg);
+  }
+  catch (error) {
+    console.warn("Error sending command to XR18!", error);
+  }
+
+  try {
+    pubSub.publish(args["mqtt-topic"] + addr, JSON.stringify({
+      type: type,
+      value: val,
+      raw_value: rawVal
+    }));
+  }
+  catch (error) {
+    console.warn("Error publishing to MQTT!", error);
+  }
+}
+
 function loadData() {
   console.log('Loading configuration and mappings');
   for (var d in mappings.midi) {
@@ -126,65 +183,9 @@ function loadData() {
       var midiDev = d;
 
       console.log("Setup MIDI input device: name=", d);
-      var onMidiCc = function(o) {
-        let msg = o.msg;
-        let dev = o.dev;
-        console.log("Handling MIDI message: ", msg);
-        midiCcTimers[msg.controller] = null;
-
-        if (!mappings.midi[dev]) {
-          console.log("No MIDI device mappings found: device=", dev);
-          return;
-        }
-
-        if (!mappings.midi[dev][msg._type]) {
-          console.log("No MIDI message type mappings found for the device: messageType=" + msg._type + "; device=", dev);
-          return;
-        }
-
-        var oscMap = mappings.midi[dev][msg._type][msg.controller];
-        if (!oscMap) {
-          console.log("Not found OSC mapping: 'mappings.midi[" + dev + "][" + msg._type + "][" + msg.controller + "]'=", oscMap);
-          return;
-        }
-      
-        let type = oscMap.oscValueType;
-        let val = oscMap.valueConverter(msg.value);
-        let rawVal = msg.value;
-        let addr = oscMap.oscPath;
-      
-        var data = {
-          address: addr,
-          args: [{
-              type: type,
-              value: val
-          }]
-        };
-      
-        console.log("Mapping found! Sending command to XR18: ", data);
-        try {
-          udpPort.send(data, xr18Addr, xr18Port);
-          // saveState(data, msg);
-        }
-        catch (error) {
-          console.warn("Error sending command to XR18!", error);
-        }
-      
-        try {
-          pubSub.publish(args["mqtt-topic"] + addr, JSON.stringify({
-            type: type,
-            value: val,
-            raw_value: rawVal
-          }));
-        }
-        catch (error) {
-          console.warn("Error publishing to MQTT!", error);
-        }
-      };
-
       midiIn.on('cc', msg => {
         if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-        midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, { msg: msg, dev: midiDev});
+        midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, { msg: msg, dev: midiDev, timers: midiCcTimers});
       });
       
       midiIn.on('noteon', msg => {

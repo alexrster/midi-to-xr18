@@ -57,6 +57,20 @@ const oscToMidiNoteOnCommandFactory = (note, channel) => (value) => ({
 module.exports = {
   "setState": s => state = s,
   "midi": {
+    "LPD8": {
+      "noteon": {
+        "44": oscMapToConstTarget('/ch/01/mix/on', 127),
+        "45": oscMapToConstTarget('/ch/03/mix/on', 127),
+        "46": oscMapToConstTarget('/ch/05/mix/on', 127),
+        "47": oscMapToConstTarget('/ch/05/mix/on', 127)
+      },
+      "noteoff": {
+        "44": oscMapToConstTarget('/ch/01/mix/on', 0),
+        "45": oscMapToConstTarget('/ch/03/mix/on', 0),
+        "46": oscMapToConstTarget('/ch/05/mix/on', 0),
+        "47": oscMapToConstTarget('/ch/05/mix/on', 0)
+      }
+    },
     "WORLDE": {
       "cc": {
         "3":  oscMapToFloatTarget('/ch/01/mix/fader'),         // 1 - fader
@@ -77,20 +91,6 @@ module.exports = {
 
         "14": oscMapToFloatFromPathMax('/ch/01/mix/fader'),    // 1 - fader
         "15": oscMapToFloatFromPathMax('/ch/03/mix/fader')     // 2 - fader
-      }
-    },
-    "LPD8": {
-      "noteon": {
-        "44": oscMapToConstTarget('/ch/01/mix/on', 127),
-        "45": oscMapToConstTarget('/ch/03/mix/on', 127),
-        "46": oscMapToConstTarget('/ch/05/mix/on', 127),
-        "47": oscMapToConstTarget('/ch/05/mix/on', 127)
-      },
-      "noteoff": {
-        "44": oscMapToConstTarget('/ch/01/mix/on', 0),
-        "45": oscMapToConstTarget('/ch/03/mix/on', 0),
-        "46": oscMapToConstTarget('/ch/05/mix/on', 0),
-        "47": oscMapToConstTarget('/ch/05/mix/on', 0)
       }
     }
   },
