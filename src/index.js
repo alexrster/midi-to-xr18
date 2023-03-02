@@ -236,7 +236,7 @@ pubSub.on('message', (t, m) => {
       let v = mappings.midi[ch]['data'](jm.value);
       let d = getMidiOut(mappings.midi[ch]['dev']);
       if (!!v) {
-        console.log('Found midi mapping! response=', JSON.stringify(v));
+        console.log('Found midi mapping! device=' + d + '; command=', JSON.stringify(v));
         d.send(v._type, v.data);
       }
     }
