@@ -28,7 +28,8 @@ if (!!args['midi-list-devices']) {
 
 const mappings = require(args.mappings);
 
-const midiDeviceNameParam = args['midi-device'];
+const midiInDeviceNameParam = args['midi-device'];
+const midiOutDeviceNameParam = args['midi-out-device'];
 const xr18Addr = args['xr18-address'];
 const xr18Port = args['xr18-port'];
 
@@ -38,27 +39,29 @@ const udpPort = new osc.UDPPort({
   metadata: true
 });
 
-var midiCcTimers = {};
+var midiIns = {};
+var midiOuts = {};
 const midiCcThrottlingMs = 20;
 
-var midiDeviceName = easymidi.getInputs().filter(x => x.startsWith(midiDeviceNameParam))[0];
+var midiInDeviceNames = easymidi.getInputs();
 var midiOutDeviceNames = easymidi.getOutputs();
 
 var pubSub;
-var midiDevice, midiOutDevice;
+var midiInDevice, midiOutDevice;
+var state = {};
+var stateSaveTimeout = null;
+
 try {
-  midiDevice = new easymidi.Input(midiDeviceName);
-  midiOutDevice = new easymidi.Output(args['midi-out-device']);
+  midiInDevice = new easymidi.Input(midiInDeviceNames.filter(x => x.startsWith(midiInDeviceNameParam))[0]);
+  midiOutDevice = new easymidi.Output(midiOutDeviceNames.filter(x => x.startsWith(midiOutDeviceNameParam))[0]);
 }
 catch (error) {
   console.error(error);
   console.log('Available devices:');
   console.log(easymidi.getInputs());
-  process.exit(-1);
+  // process.exit(-1);
 }
 
-var state = {};
-var stateSaveTimeout = null;
 function saveState(oscData, midiData) {
   state[oscData.address] = { osc: oscData, midi: midiData };
 
@@ -69,8 +72,112 @@ function saveState(oscData, midiData) {
   }, 1000);
 }
 
+function getMidiIn(name) {
+  if (!!name) {
+    if (!!midiIns[name]) {
+      console.log("Resolve MIDI input device from cache: name=" + name + "; device=" + midiIns[name]);
+      return midiIns[name];
+    }
+
+    console.log("Try find MIDI input device: name=" + name);
+    try {
+      var devName = midiInDeviceNames.filter(x => x.startsWith(name))[0];
+      console.log("Found real MIDI input device name: ", devName);
+      midiIns[name] = new easymidi.Input(devName);
+      return midiIns[name];
+    }
+    catch (error) {
+      console.warn('Unable to find or open MIDI input device: name="' + name +  '", error=', error);
+    }
+  }
+
+  return midiInDevice;
+}
+
+function getMidiOut(name) {
+  if (!!name) {
+    if (!!midiOuts[name]) {
+      console.log("Resolve MIDI output device from cache: name=" + name + "; device=" + midiOuts[name]);
+      return midiOuts[name];
+    }
+
+    console.log("Try find MIDI output device: name=" + name);
+    try {
+      var devName = midiOutDeviceNames.filter(x => x.startsWith(name))[0];
+      console.log("Found real MIDI output device name: ", devName);
+      midiOuts[name] = new easymidi.Output(devName);
+      return midiOuts[name];
+    }
+    catch (error) {
+      console.warn('Unable to find or open MIDI output device: name="' + name +  '", error=', error);
+    }
+  }
+
+  return midiOutDevice;
+}
 
 function loadData() {
+  for (var d in mappings.midi) {
+    var midiIn = getMidiIn(d);
+    if (!!midiIn) {
+      var midiCcTimers = {};
+      var onMidiCc = function(msg) {
+        midiCcTimers[msg.controller] = null;
+      
+        console.log(msg);
+        let oscMap = mappings.midi[d][msg._type][msg.controller] || null;
+        if (oscMap == null) return;
+      
+        let type = oscMap.oscValueType;
+        let val = oscMap.valueConverter(msg.value);
+        let rawVal = msg.value;
+        let addr = oscMap.oscPath;
+      
+        var data = {
+          address: addr,
+          args: [{
+              type: type,
+              value: val
+          }]
+        };
+      
+        console.log("Mapping found! Sending command to XR18: ", data);
+        try {
+          udpPort.send(data, xr18Addr, xr18Port);
+          saveState(data, msg);
+        }
+        catch (error) {
+          console.warn("Error sending command to XR18!", error);
+        }
+      
+        try {
+          pubSub.publish(args["mqtt-topic"] + addr, JSON.stringify({
+            type: type,
+            value: val,
+            raw_value: rawVal
+          }));
+        }
+        catch (error) {
+          console.warn("Error publishing to MQTT!", error);
+        }
+      };
+      d.on('cc', msg => {
+        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
+        midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, msg);
+      });
+      
+      d.on('noteon', msg => {
+        console.log(msg);
+      });
+      
+      d.on('noteoff', msg => {
+        console.log(msg);
+      });
+      
+      d.on('program', msg => console.log(msg));
+    }
+  }
+
   fs.readFile('./state_data.json', function (err, data) {
     if(!!err) {
       console.log("Error saving state to './stat_data.json': ", err);
@@ -92,29 +199,6 @@ function loadData() {
       }
     }
   });
-}
-
-var midiOuts = {};
-function getMidiOut(name) {
-  if (!!name) {
-    if (!!midiOuts[name]) {
-      console.log("Resolve MIDI output device from cache: name=" + name + "; device=" + midiOuts[name]);
-      return midiOuts[name];
-    }
-
-    console.log("Try find MIDI output device: name=" + name);
-    try {
-      var devName = midiOutDeviceNames.filter(x => x.startsWith(name))[0];
-      console.log("Found real MIDI output device name: ", devName);
-      midiOuts[name] = new easymidi.Output(devName);
-      return midiOuts[name];
-    }
-    catch (error) {
-      console.warn('Unable to find or open MIDI output device: name="' + name +  '", error=', error);
-    }
-  }
-
-  return midiOutDevice;
 }
 
 function handleOscMessage(address, args) {
@@ -159,73 +243,19 @@ udpPort.on("close", () => {
   setTimeout(() => { process.exit(-2); }, 1000);
 });
 
-const onMidiCc = function(msg) {
-  midiCcTimers[msg.controller] = null;
-
-  console.log(msg);
-  let oscMap = mappings[msg._type][msg.controller] || null;
-  if (oscMap == null) return;
-
-  let type = oscMap.oscValueType;
-  let val = oscMap.valueConverter(msg.value);
-  let rawVal = msg.value;
-  let addr = oscMap.oscPath;
-
-  var data = {
-    address: addr,
-    args: [{
-        type: type,
-        value: val
-    }]
-  };
-
-  console.log("Mapping found! Sending command to XR18: ", data);
-  try {
-    udpPort.send(data, xr18Addr, xr18Port);
-    saveState(data, msg);
-  }
-  catch (error) {
-    console.warn("Error sending command to XR18!", error);
-  }
-
-  try {
-    pubSub.publish(args["mqtt-topic"] + addr, JSON.stringify({
-      type: type,
-      value: val,
-      raw_value: rawVal
-    }));
-  }
-  catch (error) {
-    console.warn("Error publishing to MQTT!", error);
-  }
-};
-
-midiDevice.on('cc', msg => {
-  if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-  midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, msg);
-});
-
-midiDevice.on('noteon', msg => {
-  console.log(msg);
-});
-
-midiDevice.on('noteoff', msg => {
-  console.log(msg);
-});
-
-midiDevice.on('program', msg => console.log(msg));
-
 // MQTT
 pubSub = mqtt.connect(args['mqtt-url'], { clientId: "midi-to-xr18" });
 pubSub.on('connect', () => {
   console.log('MQTT connected!');
 
-  for (var i in mappings.cc) {
-    let el = mappings.cc[i];
-    let topic = args["mqtt-topic"] + el.oscPath + "/set";
+  for (var d in mappings.midi) {
+    for (var i in mappings.midi[d].cc) {
+      let el = mappings.cc[i];
+      let topic = args["mqtt-topic"] + el.oscPath + "/set";
 
-    console.log('Subscribing to MQTT topic: "' + topic + '"');
-    pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+      console.log('Subscribing to MQTT topic: "' + topic + '"');
+      pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+    }
   }
 
   for (var i in mappings.osc) {
@@ -259,7 +289,7 @@ pubSub.on('message', (t, m) => {
 
 function cleanup() {
   console.log("Cleanup before exit");
-  midiDevice.close();
+  midiInDevice.close();
   udpPort.close();
 }
 
