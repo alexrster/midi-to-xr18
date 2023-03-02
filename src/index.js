@@ -117,10 +117,27 @@ function getMidiOut(name) {
   return midiOutDevice;
 }
 
+function handleOscMessage(address, args) {
+  try {
+    let jm = typeof(args) != 'object' ? JSON.parse(args) : args;
+    let v = mappings.osc[address]['data'](jm.value);
+    let d = getMidiOut(mappings.osc[address]['dev']);
+    if (!!v) {
+      console.log('Found midi mapping! device=' + d + '; command=', JSON.stringify(v));
+      d.send(v._type, v.data);
+    }
+  }
+  catch (error) {
+    console.warn("Error sending command to MIDI!", error);
+  }
+}
+
 udpPort.open();
 udpPort.on('message', function (oscMsg, timeTag, info) {
   console.log("An OSC message received: ", oscMsg);
   console.log("Remote info is: ", info);
+  
+  handleOscMessage(oscMsg.address, oscMsg.args[0]);
 });
 
 udpPort.on('ready', () => {
@@ -211,7 +228,7 @@ pubSub.on('connect', () => {
     pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
   }
 
-  for (var i in mappings.midi) {
+  for (var i in mappings.osc) {
     let topic = args["mqtt-topic"] + i;
 
     console.log('Subscribing to MQTT topic: "' + topic + '"');
@@ -235,19 +252,8 @@ pubSub.on('message', (t, m) => {
     }
   }
   else {
-    try {
-      let jm = JSON.parse(ms);
-      let ch = t.replace(args["mqtt-topic"], "");
-      let v = mappings.midi[ch]['data'](jm.value);
-      let d = getMidiOut(mappings.midi[ch]['dev']);
-      if (!!v) {
-        console.log('Found midi mapping! device=' + d + '; command=', JSON.stringify(v));
-        d.send(v._type, v.data);
-      }
-    }
-    catch (error) {
-      console.warn("Error sending command to MIDI!", error);
-    }
+    let address = t.replace(args["mqtt-topic"], "");
+    handleOscMessage(address, ms);
   }
 });
 
