@@ -129,7 +129,6 @@ function loadData() {
         console.log("Handling MIDI message: ", msg);
         midiCcTimers[msg.controller] = null;
       
-        console.log(msg);
         let oscMap = mappings.midi[d][msg._type][msg.controller] || null;
         if (oscMap == null) return;
       

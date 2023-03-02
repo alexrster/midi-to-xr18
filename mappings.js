@@ -17,7 +17,7 @@ const oscMapToFloatTarget = (path, conv) => ({
 const oscMapToConstTarget = (path, val) => ({
   "oscPath": path,
   "oscValueType": "i",
-  "valueConverter": x => x > 0 ? val : 0
+  "valueConverter": (x) => val
 });
 
 const oscMapToButtonTarget = path => ({
