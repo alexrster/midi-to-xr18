@@ -121,6 +121,7 @@ function loadData() {
     var midiIn = getMidiIn(d);
     if (!!midiIn) {
       var midiCcTimers = {};
+
       var onMidiCc = function(msg) {
         midiCcTimers[msg.controller] = null;
       
@@ -161,20 +162,21 @@ function loadData() {
           console.warn("Error publishing to MQTT!", error);
         }
       };
-      d.on('cc', msg => {
+      
+      midiIn.on('cc', msg => {
         if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
         midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, msg);
       });
       
-      d.on('noteon', msg => {
+      midiIn.on('noteon', msg => {
         console.log(msg);
       });
       
-      d.on('noteoff', msg => {
+      midiIn.on('noteoff', msg => {
         console.log(msg);
       });
       
-      d.on('program', msg => console.log(msg));
+      midiIn.on('program', msg => console.log(msg));
     }
   }
 
