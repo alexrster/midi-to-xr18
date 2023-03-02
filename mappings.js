@@ -14,6 +14,12 @@ const oscMapToFloatTarget = (path, conv) => ({
   }
 });
 
+const oscMapToConstTarget = (path, val) => ({
+  "oscPath": path,
+  "oscValueType": "i",
+  "valueConverter": x => x > 0 ? val : 0
+});
+
 const oscMapToButtonTarget = path => ({
   "oscPath": path,
   "oscValueType": "i",
@@ -74,11 +80,17 @@ module.exports = {
       }
     },
     "LPD8": {
-      "cc": {
-        "44": oscMapToButtonTarget('/ch/01/mix/on'),
-        "45": oscMapToButtonTarget('/ch/03/mix/on'),
-        "46": oscMapToButtonTarget('/ch/05/mix/on'),
-        "47": oscMapToButtonTarget('/ch/05/mix/on')
+      "noteon": {
+        "44": oscMapToConstTarget('/ch/01/mix/on', 127),
+        "45": oscMapToConstTarget('/ch/03/mix/on', 127),
+        "46": oscMapToConstTarget('/ch/05/mix/on', 127),
+        "47": oscMapToConstTarget('/ch/05/mix/on', 127)
+      },
+      "noteoff": {
+        "44": oscMapToConstTarget('/ch/01/mix/on', 0),
+        "45": oscMapToConstTarget('/ch/03/mix/on', 0),
+        "46": oscMapToConstTarget('/ch/05/mix/on', 0),
+        "47": oscMapToConstTarget('/ch/05/mix/on', 0)
       }
     }
   },

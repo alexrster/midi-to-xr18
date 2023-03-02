@@ -258,12 +258,34 @@ pubSub.on('connect', () => {
   console.log('MQTT connected!');
 
   for (var d in mappings.midi) {
-    for (var i in mappings.midi[d].cc) {
-      let el = mappings.midi[d].cc[i];
-      let topic = args["mqtt-topic"] + el.oscPath + "/set";
+    if (!!mappings.midi[d].cc) {
+      for (var i in mappings.midi[d].cc) {
+        let el = mappings.midi[d].cc[i];
+        let topic = args["mqtt-topic"] + el.oscPath + "/set";
 
-      console.log('Subscribing to MQTT topic: "' + topic + '"');
-      pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+        console.log('Subscribing to MQTT topic: "' + topic + '"');
+        pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+      }
+    }
+
+    if (!!mappings.midi[d].noteon) {
+      for (var i in mappings.midi[d].noteon) {
+        let el = mappings.midi[d].noteon[i];
+        let topic = args["mqtt-topic"] + el.oscPath + "/set";
+
+        console.log('Subscribing to MQTT topic: "' + topic + '"');
+        pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+      }
+    }
+
+    if (!!mappings.midi[d].noteoff) {
+      for (var i in mappings.midi[d].noteoff) {
+        let el = mappings.midi[d].noteoff[i];
+        let topic = args["mqtt-topic"] + el.oscPath + "/set";
+
+        console.log('Subscribing to MQTT topic: "' + topic + '"');
+        pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
+      }
     }
   }
 
