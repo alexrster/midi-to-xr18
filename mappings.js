@@ -1,4 +1,5 @@
-let state = {};
+var state = {};
+var mappings = {};
 
 const midiFloatValueConverter = max => x => x / 127.0 * max;
 const midiBoolValueConverter = x => !!x ? "1" : "0";
@@ -54,7 +55,31 @@ const oscToMidiNoteOnCommandFactory = (note, channel) => (value) => ({
   }
 });
 
-module.exports = {
+const midiSend = (device, type, dataFunc) => (v) => { 
+  let dev = mappings.getMidiOut(device);
+  if (!dev) {
+    console.warn('Cannot find MIDI out device!', device);
+    return;
+  }
+
+  let m = dataFunc(v);  
+  if (m !== null && m !== undefined && !!type) 
+    try {
+      console.log('Sending MIDI command.', device, type, m.data);
+      dev.send(type, m.data); 
+    }
+    catch (e) {
+      console.warn('Failed to send MIDI command!', device, type, m.data, e);
+    }
+};
+
+var midiSendNoteOn = (device, dataFunc) => midiSend(device, 'noteon', dataFunc);
+var midiSendNoteOff = (device, dataFunc) => midiSend(device, 'noteoff', dataFunc);
+var midiSendCc = (device, dataFunc) => midiSend(device, 'cc', dataFunc);
+
+var mqttPublish = (topic) => (v) => mappings.mqttPublish(topic, v);
+
+mappings = {
   "setState": s => state = s,
   "midi": {
     "LPD8": {
@@ -95,8 +120,15 @@ module.exports = {
     }
   },
   "osc": {
-    "/ch/01/mix/on": { "data": oscToMidiNoteOnCommandFactory(44), "dev": "LPD8" },
-    "/ch/03/mix/on": { "data": oscToMidiNoteOnCommandFactory(45), "dev": "LPD8" },
-    "/ch/05/mix/on": { "data": oscToMidiNoteOnCommandFactory(47), "dev": "LPD8" }
+    "/ch/01/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
+    "/ch/03/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
+    "/ch/05/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ]
+  },
+  "mqtt": {
+    "/ch/01/mix/on/set": oscMapToButtonTarget('/ch/01/mix/on'),
+    "/ch/03/mix/on/set": oscMapToButtonTarget('/ch/03/mix/on'),
+    "/ch/05/mix/on/set": oscMapToButtonTarget('/ch/05/mix/on')
   }
 };
+
+module.exports = mappings;

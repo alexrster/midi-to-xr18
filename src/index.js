@@ -155,7 +155,6 @@ function onMidiCc(o) {
   console.log("Mapping found! Sending command to XR18: ", data);
   try {
     udpPort.send(data, xr18Addr, xr18Port);
-    // saveState(data, msg);
   }
   catch (error) {
     console.warn("Error sending command to XR18!", error);
@@ -201,45 +200,47 @@ function loadData() {
       midiIn['setupComplete'] = true;
     }
   }
+}
 
-  return;
-  fs.readFile('./state_data.json', function (err, data) {
-    if(!!err) {
-      console.log("Error saving state to './stat_data.json': ", err);
-      return;
-    }
-
-    console.log("Reading state from './stat_data.json");
-    state = JSON.parse(data);
-
-    mappings.setState(state);
-
-    for (var i in state) {
-      console.log("Recover state for:", state[i]);
-      try {
-        midiOutDevice.send(state[i].midi._type, state[i].midi);
-      }
-      catch (e) {
-        console.log("Error sending MIDI command: ", e);
-      }
-    }
-  });
+function execMapping(mappingFunc, ...params) {
+  if (Array.isArray(mappingFunc)) {
+    for (var i in mappingFunc)
+      if (typeof(mappingFunc[i]) === 'function') mappingFunc[i].call(mappings, params);
+  }
+  else {
+    mappingFunc.call(mappings, params);
+  }
 }
 
 function handleOscMessage(address, args) {
   try {
+    if (!mappings.osc[address]) return;
+
     let jm = typeof(args) != 'object' ? JSON.parse(args) : args;
-    let v = mappings.osc[address]['data'](jm.value);
-    let d = getMidiOut(mappings.osc[address]['dev']);
-    if (!!v) {
-      console.log('Found midi mapping! device=' + d + '; command=', JSON.stringify(v));
-      d.send(v._type, v.data);
-    }
+    execMapping(mappings.osc[address], jm.value);
   }
   catch (error) {
-    console.warn("Error sending command to MIDI!", error);
+    console.warn("Failed to handle OSC message!", error);
   }
 }
+
+function handleMqttMessage(topic, message) {
+  console.log('Received message from MQTT: topic="' + topic + '"', ms);
+
+  try {
+    let address = topic.replace(args["mqtt-topic"], "");
+    if (!mappings.mqtt[address]) return;
+
+    let ms = message.toString();
+    execMapping(mappings.mqtt[address], ms);
+  }
+  catch (error) {
+    console.warn("Failed to handle MQTT message!", error);
+  }
+}
+
+mappings.getMidiOut = getMidiOut;
+mappings.mqttPublish = (topic, message) => pubSub.publish(args["mqtt-topic"] + topic, typeof(message) === 'object' ? JSON.stringify(message) : message);
 
 udpPort.open();
 udpPort.on('message', function (oscMsg, timeTag, info) {
@@ -250,9 +251,6 @@ udpPort.on('message', function (oscMsg, timeTag, info) {
 });
 
 udpPort.on('ready', () => {
-  // udpPort.send({ address: '/info' }, xr18Addr, xr18Port);
-  // udpPort.send({ address: '/status' }, xr18Addr, xr18Port);
-
   console.log('Connection to XR18 established!');
   loadData();
 
@@ -275,75 +273,17 @@ pubSub = mqtt.connect(args['mqtt-url'], { clientId: "midi-to-xr18" });
 pubSub.on('connect', () => {
   console.log('MQTT connected!');
 
-  for (var d in mappings.midi) {
-    if (!!mappings.midi[d].cc) {
-      for (var i in mappings.midi[d].cc) {
-        let el = mappings.midi[d].cc[i];
-        let topic = args["mqtt-topic"] + el.oscPath + "/set";
-
-        if (!!subsriptions[topic]) {
-          subsriptions[topic] = true;
-          console.log('Subscribing to MQTT topic: "' + topic + '"');
-          pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
-        }
-      }
+  for (var d in mappings.mqtt) {
+    let topic = mappings.mqtt[d];
+    if (!!subsriptions[topic]) {
+      subsriptions[topic] = true;
+      console.log('Subscribing to MQTT topic: "' + topic + '"');
+      pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
     }
-
-    if (!!mappings.midi[d].noteon) {
-      for (var i in mappings.midi[d].noteon) {
-        let el = mappings.midi[d].noteon[i];
-        let topic = args["mqtt-topic"] + el.oscPath + "/set";
-
-        if (!!subsriptions[topic]) {
-          subsriptions[topic] = true;
-          console.log('Subscribing to MQTT topic: "' + topic + '"');
-          pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
-        }
-      }
-    }
-
-    if (!!mappings.midi[d].noteoff) {
-      for (var i in mappings.midi[d].noteoff) {
-        let el = mappings.midi[d].noteoff[i];
-        let topic = args["mqtt-topic"] + el.oscPath + "/set";
-
-        if (!!subsriptions[topic]) {
-          subsriptions[topic] = true;
-          console.log('Subscribing to MQTT topic: "' + topic + '"');
-          pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
-        }
-      }
-    }
-  }
-
-  for (var i in mappings.osc) {
-    let topic = args["mqtt-topic"] + i;
-
-    console.log('Subscribing to MQTT topic: "' + topic + '"');
-    pubSub.subscribe(topic, (e) => { if (e) console.warn("Failed to subscribe on MQTT topic: '" + topic + "'", e); });
   }
 });
 
-pubSub.on('message', (t, m) => {
-  let ms = m.toString();
-  console.log('Received message from "' + t + '"', ms);
-
-  if (!!t && t.endsWith('/set')) {
-    try {
-      let jm = JSON.parse(ms);
-
-      udpPort.send(jm, xr18Addr, xr18Port);
-      // saveState(data, msg);
-    }
-    catch (error) {
-      console.warn("Error sending command from MQTT to XR18!", error);
-    }
-  }
-  else {
-    let address = t.replace(args["mqtt-topic"], "");
-    handleOscMessage(address, ms);
-  }
-});
+pubSub.on('message', handleMqttMessage);
 
 function cleanup() {
   console.log("Cleanup before exit");
