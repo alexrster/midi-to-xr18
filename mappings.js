@@ -94,6 +94,13 @@ mappings = {
         "45": oscMapToConstTarget('/ch/03/mix/on', 0),
         "46": oscMapToConstTarget('/ch/05/mix/on', 0),
         "47": oscMapToConstTarget('/ch/05/mix/on', 0)
+      },
+      "cc": {
+        "3": oscMapToFloatTarget('/ch/13/mix/fader'),
+        "4": oscMapToFloatTarget('/ch/15/mix/fader'),
+        "5": oscMapToFloatTarget('/ch/01/mix/fader'),
+        "6": oscMapToFloatTarget('/ch/03/mix/fader'),
+        "8": oscMapToFloatTarget('/ch/05/mix/fader')
       }
     },
     "WORLDE": {
