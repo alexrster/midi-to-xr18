@@ -48,8 +48,6 @@ var midiOutDeviceNames = easymidi.getOutputs();
 
 var pubSub;
 var midiInDevice, midiOutDevice;
-var state = {};
-var stateSaveTimeout = null;
 
 try {
   midiInDevice = new easymidi.Input(midiInDeviceNames.filter(x => x.startsWith(midiInDeviceNameParam))[0]);
@@ -60,16 +58,6 @@ catch (error) {
   console.log('Available devices:');
   console.log(easymidi.getInputs());
   // process.exit(-1);
-}
-
-function saveState(oscData, midiData) {
-  state[oscData.address] = { osc: oscData, midi: midiData };
-
-  if (!!stateSaveTimeout) clearTimeout(stateSaveTimeout);
-  stateSaveTimeout = setTimeout(function() {
-    stateSaveTimeout = null;
-    fs.writeFile('./state_data.json', JSON.stringify(state), (err) => !!err ? console.log("Error saving state to './stat_data.json': ", err) : 0);
-  }, 1000);
 }
 
 function getMidiIn(name) {
@@ -179,12 +167,11 @@ function loadData() {
     var midiIn = getMidiIn(d);
     if (!!midiIn && !midiIn['setupComplete']) {
       var midiCcTimers = {};
-      var midiDev = d;
 
       console.log("Setup MIDI input device: name=", d);
       midiIn.on('cc', msg => {
         if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-        midiCcTimers[msg.controller] = setTimeout(onMidiCc, midiCcThrottlingMs, { msg: msg, dev: midiDev, timers: midiCcTimers});
+        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
       });
       
       midiIn.on('noteon', msg => {
