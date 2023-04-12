@@ -161,6 +161,13 @@ function onMidiCc(o) {
 }
 
 function loadData() {
+  const _createHandler = function(d, midiCcTimers) {
+    return function(msg) {
+      if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
+      midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
+    };
+  };
+  
   console.log('Loading configuration and mappings');
   for (var d in mappings.midi) {
     console.log("Processing MIDI mappings for device: name=", d);
@@ -169,25 +176,10 @@ function loadData() {
       var midiCcTimers = {};
 
       console.log("Setup MIDI input device: name=", d);
-      midiIn.on('cc', msg => {
-        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
-      });
-      
-      midiIn.on('noteon', msg => {
-        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
-      });
-      
-      midiIn.on('noteoff', msg => {
-        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
-      });
-      
-      midiIn.on('program', msg => {
-        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
-        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
-      });
+      midiIn.on('cc', _createHandler(d, midiCcTimers));
+      midiIn.on('noteon', _createHandler(d, midiCcTimers));
+      midiIn.on('noteoff', _createHandler(d, midiCcTimers));
+      midiIn.on('program', _createHandler(d, midiCcTimers));
 
       midiIn['setupComplete'] = true;
     }
