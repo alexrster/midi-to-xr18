@@ -175,14 +175,19 @@ function loadData() {
       });
       
       midiIn.on('noteon', msg => {
-        console.log(msg);
+        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
+        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
       });
       
       midiIn.on('noteoff', msg => {
-        console.log(msg);
+        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
+        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
       });
       
-      midiIn.on('program', msg => console.log(msg));
+      midiIn.on('program', msg => {
+        if (midiCcTimers[msg.controller] != null) clearTimeout(midiCcTimers[msg.controller]);
+        midiCcTimers[msg.controller] = setTimeout((function() { onMidiCc(this); }).bind({ msg: msg, dev: d, timers: midiCcTimers}), midiCcThrottlingMs);
+      });
 
       midiIn['setupComplete'] = true;
     }
