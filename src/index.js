@@ -120,8 +120,8 @@ function onMidiCc(o) {
     console.log("No MIDI message type mappings found for the device: messageType=" + msg._type + "; device=", dev);
     return;
   }
-
-  var oscMap = mappings.midi[dev][msg._type][msg.controller];
+  
+  var oscMap = msg._type == 'cc' ? mappings.midi[dev][msg._type][msg.controller] : mappings.midi[dev][msg._type][msg.note];
   if (!oscMap) {
     console.log("Not found OSC mapping: 'mappings.midi[" + dev + "][" + msg._type + "][" + msg.controller + "]'=", oscMap);
     return;
