@@ -4,13 +4,13 @@ var mappings = {};
 const midiFloatValueConverter = max => x => x / 127.0 * max;
 const midiBoolValueConverter = x => !!x ? "1" : "0";
 
-const oscMapToFloatTarget = (path, conv) => ({
+const oscMapToFloatTarget = (path, conv, max) => ({
   "oscPath": path,
   "oscValueType": "f",
   "valueConverter": x => {
     if (!state[path]) state[path] = {};
     state[path].current = x;
-    state[path].value = (conv || midiFloatValueConverter(state[path].max || 0.75))(x);
+    state[path].value = (conv || midiFloatValueConverter(state[path].max || max))(x);
     return state[path].value;
   }
 });
@@ -100,12 +100,12 @@ mappings = {
         "47": oscMapToConstTarget('/ch/05/mix/on', 0)
       },
       "cc": {
-        "3": oscMapToFloatTarget('/ch/13/mix/fader'),
-        "4": oscMapToFloatTarget('/ch/15/mix/fader'),
-        "5": oscMapToFloatTarget('/ch/01/mix/fader'),
-        "6": oscMapToFloatTarget('/ch/03/mix/fader'),
-        "7": oscMapToFloatTarget('/ch/09/mix/fader'),
-        "8": oscMapToFloatTarget('/ch/05/mix/fader')
+        "3": oscMapToFloatTarget('/ch/13/mix/fader', null, 1),
+        "4": oscMapToFloatTarget('/ch/15/mix/fader', null, 1),
+        "5": oscMapToFloatTarget('/ch/01/mix/fader', null, 1),
+        "6": oscMapToFloatTarget('/ch/03/mix/fader', null, 1),
+        "7": oscMapToFloatTarget('/ch/09/mix/fader', null, 1),
+        "8": oscMapToFloatTarget('/ch/05/mix/fader', null, 1)
       }
     },
     "WORLDE": {
