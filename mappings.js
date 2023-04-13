@@ -10,10 +10,12 @@ const oscMapToFloatTarget = (path, conv, max) => ({
   "valueConverter": x => {
     if (!state[path]) state[path] = {};
     state[path].current = x;
-    state[path].value = (conv || midiFloatValueConverter(state[path].max || max))(x);
+    state[path].value = (conv || midiFloatValueConverter(state[path].max || max || 0.75))(x);
     return state[path].value;
   }
 });
+
+const oscMapToFloatMaxTarget = (path, max) => oscMapToFloatTarget(path, undefined, max);
 
 const oscMapToConstTarget = (path, val) => ({
   "oscPath": path,
@@ -84,28 +86,28 @@ mappings = {
   "midi": {
     "LPD8": {
       "noteon": {
-        "42": oscMapToConstTarget('/ch/13/mix/on', 127),
-        "43": oscMapToConstTarget('/ch/15/mix/on', 127),
-        "44": oscMapToConstTarget('/ch/01/mix/on', 127),
-        "45": oscMapToConstTarget('/ch/03/mix/on', 127),
+        "48": oscMapToConstTarget('/ch/13/mix/on', 127),
+        "49": oscMapToConstTarget('/ch/15/mix/on', 127),
+        "50": oscMapToConstTarget('/ch/01/mix/on', 127),
+        "51": oscMapToConstTarget('/ch/03/mix/on', 127),
         "46": oscMapToConstTarget('/ch/09/mix/on', 127),
         "47": oscMapToConstTarget('/ch/05/mix/on', 127)
       },
       "noteoff": {
-        "42": oscMapToConstTarget('/ch/13/mix/on', 0),
-        "43": oscMapToConstTarget('/ch/15/mix/on', 0),
-        "44": oscMapToConstTarget('/ch/01/mix/on', 0),
-        "45": oscMapToConstTarget('/ch/03/mix/on', 0),
+        "48": oscMapToConstTarget('/ch/13/mix/on', 0),
+        "49": oscMapToConstTarget('/ch/15/mix/on', 0),
+        "50": oscMapToConstTarget('/ch/01/mix/on', 0),
+        "51": oscMapToConstTarget('/ch/03/mix/on', 0),
         "46": oscMapToConstTarget('/ch/09/mix/on', 0),
         "47": oscMapToConstTarget('/ch/05/mix/on', 0)
       },
       "cc": {
-        "3": oscMapToFloatTarget('/ch/13/mix/fader', null, 1),
-        "4": oscMapToFloatTarget('/ch/15/mix/fader', null, 1),
-        "5": oscMapToFloatTarget('/ch/01/mix/fader', null, 1),
-        "6": oscMapToFloatTarget('/ch/03/mix/fader', null, 1),
-        "7": oscMapToFloatTarget('/ch/09/mix/fader', null, 1),
-        "8": oscMapToFloatTarget('/ch/05/mix/fader', null, 1)
+        "1": oscMapToFloatMaxTarget('/ch/01/mix/fader', 1),
+        "2": oscMapToFloatMaxTarget('/ch/03/mix/fader', 1),
+        "3": oscMapToFloatMaxTarget('/ch/13/mix/fader', 1),
+        "4": oscMapToFloatMaxTarget('/ch/15/mix/fader', 1),
+        "7": oscMapToFloatMaxTarget('/ch/09/mix/fader', 1),
+        "8": oscMapToFloatMaxTarget('/ch/05/mix/fader', 1)
       }
     },
     "WORLDE": {
@@ -132,7 +134,12 @@ mappings = {
     },
     "nanoKONTROL2": {
       "cc": {
-        "3": () => console.log
+        "0": oscMapToFloatTarget('/ch/01/mix/fader'),
+        "1": oscMapToFloatTarget('/ch/03/mix/fader'),
+        "2": oscMapToFloatTarget('/ch/05/mix/fader'),
+        "3": oscMapToFloatTarget('/ch/09/mix/fader'),
+        "4": oscMapToFloatTarget('/ch/13/mix/fader'),
+        "5": oscMapToFloatTarget('/ch/15/mix/fader')
       }
     }
   },
