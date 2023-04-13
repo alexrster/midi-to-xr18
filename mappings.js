@@ -129,6 +129,11 @@ mappings = {
         "14": oscMapToFloatFromPathMax('/ch/01/mix/fader'),    // 1 - fader
         "15": oscMapToFloatFromPathMax('/ch/03/mix/fader')     // 2 - fader
       }
+    },
+    "nanoKONTROL2": {
+      "cc": {
+        "3": () => console.log
+      }
     }
   },
   "osc": {
