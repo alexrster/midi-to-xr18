@@ -1,6 +1,6 @@
 var state = {};
 var mappings = {};
-var _blinkingQueue = [];
+var _blinkingQueue = {};
 
 const _blinkFunc = (val, interval) => {
   for (var i in _blinkingQueue) 
