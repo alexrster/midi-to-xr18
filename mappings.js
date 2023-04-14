@@ -102,12 +102,12 @@ mappings = {
         "47": oscMapToConstTarget('/ch/05/mix/on', 0)
       },
       "cc": {
-        "1": oscMapToFloatMaxTarget('/ch/01/mix/fader', 1),
-        "2": oscMapToFloatMaxTarget('/ch/03/mix/fader', 1),
-        "3": oscMapToFloatMaxTarget('/ch/13/mix/fader', 1),
-        "4": oscMapToFloatMaxTarget('/ch/15/mix/fader', 1),
+        "5": oscMapToFloatMaxTarget('/ch/01/mix/fader', 1),
+        "6": oscMapToFloatMaxTarget('/ch/03/mix/fader', 1),
         "7": oscMapToFloatMaxTarget('/ch/09/mix/fader', 1),
-        "8": oscMapToFloatMaxTarget('/ch/05/mix/fader', 1)
+        "8": oscMapToFloatMaxTarget('/ch/05/mix/fader', 1),
+        "3": oscMapToFloatMaxTarget('/ch/13/mix/fader', 1),
+        "4": oscMapToFloatMaxTarget('/ch/15/mix/fader', 1)
       }
     },
     "WORLDE": {
