@@ -1,11 +1,11 @@
 var state = {};
 var mappings = {};
-var _blinkingQueue = {};
+var _blinkingQueue = [];
 
 const _blinkFunc = (val, interval) => {
   for (var i in _blinkingQueue) 
-    if (!!blinkingQueue[i])
-      blinkingQueue[i](val);
+    if (!!_blinkingQueue[i])
+      _blinkingQueue[i](val);
   
   setTimeout(_blinkFunc, interval, !val, interval);
 };
@@ -15,13 +15,13 @@ const blink = (id, func, offValue) => value => {
   if (!id || !func) return;
   if (!value) {
     _blinkingQueue[id] = null;
-    return;
+    return func(value);
   }
   
   if (offValue == 'undefined') offValue = !value;
   _blinkingQueue[id] = v => func(v ? value : offValue);
   
-  return func;
+  return func(value);
 };
 
 const midiFloatValueConverter = max => x => x / 127.0 * max;
