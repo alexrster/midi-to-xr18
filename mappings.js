@@ -43,7 +43,7 @@ const oscToMidiCcCommandFactory = (controller, channel, positiveVal, zeroVal) =>
   "_type": "cc",
   "data": {
     "controller": controller,
-    "value": value > 0 ? (positiveVal || 127) : (zeroVal || 0),
+    "value": value > 0 ? (positiveVal == 'undefined' ? 127 : positiveVal) : (zeroVal == 'undefined' ? 0 : zeroVal),
     "channel": (channel || 0)
   }
 });
