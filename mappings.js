@@ -3,7 +3,6 @@ var mappings = {};
 
 const midiFloatValueConverter = max => x => x / 127.0 * max;
 const midiBoolValueConverter = x => !!x ? "1" : "0";
-const midiBoolInvertedValueConverter = x => !!x ? "0" : "1";
 
 const oscMapToFloatTarget = (path, conv, max) => ({
   "oscPath": path,
@@ -24,10 +23,10 @@ const oscMapToConstTarget = (path, val) => ({
   "valueConverter": (x) => val
 });
 
-const oscMapToButtonTarget = (path, invert) => ({
+const oscMapToButtonTarget = (path, trueVal, falseVal) => ({
   "oscPath": path,
   "oscValueType": "i",
-  "valueConverter": !!invert ? midiBoolInvertedValueConverter : midiBoolValueConverter
+  "valueConverter": x => !!x ? (trueVal || '1') : (falseVal || '0')
 });
 
 const oscMapToFloatFromPathMax = (path) => ({
@@ -44,7 +43,7 @@ const oscToMidiCcCommandFactory = (controller, channel, positiveVal, zeroVal) =>
   "_type": "cc",
   "data": {
     "controller": controller,
-    "value": value > 0 ? (positiveVal || value) : (zeroVal || 0),
+    "value": value > 0 ? (positiveVal || 127) : (zeroVal || 0),
     "channel": (channel || 0)
   }
 });
@@ -144,37 +143,37 @@ mappings = {
         // Buttons are CCs
         // First vertical 3 button codes: 32, 48, 64
         // SOLO
-        "32": [ oscMapToButtonTarget('/-stat/solosw/01'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(32, 127)) ],
-        "33": [ oscMapToButtonTarget('/-stat/solosw/03'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(33, 127)) ],
-        "34": [ oscMapToButtonTarget('/-stat/solosw/05'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(34, 127)) ],
-        "35": [ oscMapToButtonTarget('/-stat/solosw/09'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(35, 127)) ],
-        "36": [ oscMapToButtonTarget('/-stat/solosw/13'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(36, 127)) ],
-        "37": [ oscMapToButtonTarget('/-stat/solosw/15'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(37, 127)) ],
+        "32": oscMapToButtonTarget('/-stat/solosw/01'),
+        "33": oscMapToButtonTarget('/-stat/solosw/03'),
+        "34": oscMapToButtonTarget('/-stat/solosw/05'),
+        "35": oscMapToButtonTarget('/-stat/solosw/09'),
+        "36": oscMapToButtonTarget('/-stat/solosw/13'),
+        "37": oscMapToButtonTarget('/-stat/solosw/15'),
         // MUTE
-        "48": [ oscMapToButtonTarget('/ch/01/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(48, 127)) ],
-        "49": [ oscMapToButtonTarget('/ch/03/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(49, 127)) ],
-        "50": [ oscMapToButtonTarget('/ch/05/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(50, 127)) ],
-        "51": [ oscMapToButtonTarget('/ch/09/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(51, 127)) ],
-        "52": [ oscMapToButtonTarget('/ch/13/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(52, 127)) ],
-        "53": [ oscMapToButtonTarget('/ch/15/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(53, 127)) ]
+        "48": oscMapToButtonTarget('/ch/01/mix/on', '0', '1'),
+        "49": oscMapToButtonTarget('/ch/03/mix/on', '0', '1'),
+        "50": oscMapToButtonTarget('/ch/05/mix/on', '0', '1'),
+        "51": oscMapToButtonTarget('/ch/09/mix/on', '0', '1'),
+        "52": oscMapToButtonTarget('/ch/13/mix/on', '0', '1'),
+        "53": oscMapToButtonTarget('/ch/15/mix/on', '0', '1')
       },
     }
   },
   "osc": {
     // MUTE handlers
-    "/ch/01/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(48, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
-    "/ch/03/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(49, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
-    "/ch/05/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(50, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ],
-    "/ch/09/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(51, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(46)), mqttPublish('/ch/09/mix/on') ],
-    "/ch/13/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(52, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(50)), mqttPublish('/ch/13/mix/on') ],
-    "/ch/15/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(53, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(51)), mqttPublish('/ch/15/mix/on') ],
+    "/ch/01/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(48, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(64, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
+    "/ch/03/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(49, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(65, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
+    "/ch/05/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(50, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(66, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ],
+    "/ch/09/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(51, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(67, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(46)), mqttPublish('/ch/09/mix/on') ],
+    "/ch/13/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(52, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(68, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(50)), mqttPublish('/ch/13/mix/on') ],
+    "/ch/15/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(53, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(69, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(51)), mqttPublish('/ch/15/mix/on') ],
     // SOLO handlers
     "/-stat/solosw/01": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(32)),
     "/-stat/solosw/03": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(33)),
     "/-stat/solosw/05": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(34)),
     "/-stat/solosw/09": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(35)),
     "/-stat/solosw/13": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(36)),
-    "/-stat/solosw/15": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(37))    
+    "/-stat/solosw/15": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(37))
   },
   "mqtt": {
     "/ch/01/mix/on/set": oscMapToButtonTarget('/ch/01/mix/on'),
