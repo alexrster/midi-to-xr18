@@ -3,6 +3,7 @@ var mappings = {};
 
 const midiFloatValueConverter = max => x => x / 127.0 * max;
 const midiBoolValueConverter = x => !!x ? "1" : "0";
+const midiBoolInvertedValueConverter = x => !!x ? "0" : "1";
 
 const oscMapToFloatTarget = (path, conv, max) => ({
   "oscPath": path,
@@ -23,10 +24,10 @@ const oscMapToConstTarget = (path, val) => ({
   "valueConverter": (x) => val
 });
 
-const oscMapToButtonTarget = path => ({
+const oscMapToButtonTarget = (path, invert) => ({
   "oscPath": path,
   "oscValueType": "i",
-  "valueConverter": midiBoolValueConverter
+  "valueConverter": !!invert ? midiBoolInvertedValueConverter : midiBoolValueConverter
 });
 
 const oscMapToFloatFromPathMax = (path) => ({
@@ -140,14 +141,22 @@ mappings = {
         "3": oscMapToFloatTarget('/ch/09/mix/fader'),
         "4": oscMapToFloatTarget('/ch/13/mix/fader'),
         "5": oscMapToFloatTarget('/ch/15/mix/fader'),
-        // Buttons are CCs here
+        // Buttons are CCs
         // First vertical 3 button codes: 32, 48, 64
-        "32": oscMapToButtonTarget('/-stat/solosw/01'),
-        "33": oscMapToButtonTarget('/-stat/solosw/03'),
-        "34": oscMapToButtonTarget('/-stat/solosw/05'),
-        "35": oscMapToButtonTarget('/-stat/solosw/09'),
-        "36": oscMapToButtonTarget('/-stat/solosw/13'),
-        "37": oscMapToButtonTarget('/-stat/solosw/15')
+        // SOLO
+        "32": [ oscMapToButtonTarget('/-stat/solosw/01'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(32, 1)) ],
+        "33": [ oscMapToButtonTarget('/-stat/solosw/03'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(33, 1)) ],
+        "34": [ oscMapToButtonTarget('/-stat/solosw/05'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(34, 1)) ],
+        "35": [ oscMapToButtonTarget('/-stat/solosw/09'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(35, 1)) ],
+        "36": [ oscMapToButtonTarget('/-stat/solosw/13'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(36, 1)) ],
+        "37": [ oscMapToButtonTarget('/-stat/solosw/15'), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(37, 1)) ],
+        // MUTE
+        "48": [ oscMapToButtonTarget('/ch/01/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(48, 1)) ],
+        "49": [ oscMapToButtonTarget('/ch/03/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(49, 1)) ],
+        "50": [ oscMapToButtonTarget('/ch/05/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(50, 1)) ],
+        "51": [ oscMapToButtonTarget('/ch/09/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(51, 1)) ],
+        "52": [ oscMapToButtonTarget('/ch/13/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(52, 1)) ],
+        "53": [ oscMapToButtonTarget('/ch/15/mix/on', true), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(53, 1)) ]
       },
     }
   },
