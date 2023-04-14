@@ -20,9 +20,9 @@ const blink = (id, func, offValue) => value => {
   
   if (offValue == 'undefined') offValue = !value;
   _blinkingQueue[id] = v => func(v ? value : offValue);
+  
+  return func;
 };
-
-const stopBlink = id => _blinkingQueue[id] = null;
 
 const midiFloatValueConverter = max => x => x / 127.0 * max;
 const midiBoolValueConverter = x => !!x ? "1" : "0";
