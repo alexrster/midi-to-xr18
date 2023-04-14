@@ -1,5 +1,27 @@
 var state = {};
 var mappings = {};
+var _blinkingQueue = {};
+
+const _blinkFunc = (val, interval) => {
+  for (var i in _blinkingQueue) 
+    if (!!blinkingQueue[i])
+      blinkingQueue[i](val);
+  
+  setTimeout(_blinkFunc, interval, !val, interval);
+};
+_blinkFunc(true, 666);
+
+const blink = (id, func, offValue) => value => {
+  if (!value) {
+    _blinkingQueue[id] = null;
+    return;
+  }
+  
+  if (offValue == 'undefined') offValue = !value;
+  _blinkingQueue[id] = v => func(v ? value : offValue);
+};
+
+const stopBlink = id => _blinkingQueue[id] = null;
 
 const midiFloatValueConverter = max => x => x / 127.0 * max;
 const midiBoolValueConverter = x => !!x ? "1" : "0";
@@ -161,12 +183,12 @@ mappings = {
   },
   "osc": {
     // MUTE handlers
-    "/ch/01/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(48, 0, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(64, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
-    "/ch/03/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(49, 0, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(65, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
-    "/ch/05/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(50, 0, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(66, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ],
-    "/ch/09/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(51, 0, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(67, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(46)), mqttPublish('/ch/09/mix/on') ],
-    "/ch/13/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(52, 0, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(68, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(50)), mqttPublish('/ch/13/mix/on') ],
-    "/ch/15/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(53, 0, 0, 127)), midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(69, 0, 127)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(51)), mqttPublish('/ch/15/mix/on') ],
+    "/ch/01/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(48, 0, 0, 127)), blink(midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(64, 0, 127))), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
+    "/ch/03/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(49, 0, 0, 127)), blink(midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(65, 0, 127))), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
+    "/ch/05/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(50, 0, 0, 127)), blink(midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(66, 0, 127))), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ],
+    "/ch/09/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(51, 0, 0, 127)), blink(midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(67, 0, 127))), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(46)), mqttPublish('/ch/09/mix/on') ],
+    "/ch/13/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(52, 0, 0, 127)), blink(midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(68, 0, 127))), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(50)), mqttPublish('/ch/13/mix/on') ],
+    "/ch/15/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(53, 0, 0, 127)), blink(midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(69, 0, 127))), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(51)), mqttPublish('/ch/15/mix/on') ],
     // SOLO handlers
     "/-stat/solosw/01": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(32)),
     "/-stat/solosw/03": midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(33)),
