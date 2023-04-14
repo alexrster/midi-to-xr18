@@ -86,18 +86,18 @@ mappings = {
   "midi": {
     "LPD8": {
       "noteon": {
-        "48": oscMapToConstTarget('/ch/13/mix/on', 127),
-        "49": oscMapToConstTarget('/ch/15/mix/on', 127),
-        "50": oscMapToConstTarget('/ch/01/mix/on', 127),
-        "51": oscMapToConstTarget('/ch/03/mix/on', 127),
+        "50": oscMapToConstTarget('/ch/13/mix/on', 127),
+        "51": oscMapToConstTarget('/ch/15/mix/on', 127),
+        "44": oscMapToConstTarget('/ch/01/mix/on', 127),
+        "45": oscMapToConstTarget('/ch/03/mix/on', 127),
         "46": oscMapToConstTarget('/ch/09/mix/on', 127),
         "47": oscMapToConstTarget('/ch/05/mix/on', 127)
       },
       "noteoff": {
-        "48": oscMapToConstTarget('/ch/13/mix/on', 0),
-        "49": oscMapToConstTarget('/ch/15/mix/on', 0),
-        "50": oscMapToConstTarget('/ch/01/mix/on', 0),
-        "51": oscMapToConstTarget('/ch/03/mix/on', 0),
+        "50": oscMapToConstTarget('/ch/13/mix/on', 0),
+        "51": oscMapToConstTarget('/ch/15/mix/on', 0),
+        "44": oscMapToConstTarget('/ch/01/mix/on', 0),
+        "45": oscMapToConstTarget('/ch/03/mix/on', 0),
         "46": oscMapToConstTarget('/ch/09/mix/on', 0),
         "47": oscMapToConstTarget('/ch/05/mix/on', 0)
       },
@@ -146,12 +146,18 @@ mappings = {
   "osc": {
     "/ch/01/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
     "/ch/03/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
-    "/ch/05/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ]
+    "/ch/05/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ],
+    "/ch/09/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(46)), mqttPublish('/ch/09/mix/on') ],
+    "/ch/13/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(50)), mqttPublish('/ch/13/mix/on') ],
+    "/ch/15/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(51)), mqttPublish('/ch/15/mix/on') ]
   },
   "mqtt": {
     "/ch/01/mix/on/set": oscMapToButtonTarget('/ch/01/mix/on'),
     "/ch/03/mix/on/set": oscMapToButtonTarget('/ch/03/mix/on'),
-    "/ch/05/mix/on/set": oscMapToButtonTarget('/ch/05/mix/on')
+    "/ch/05/mix/on/set": oscMapToButtonTarget('/ch/05/mix/on'),
+    "/ch/09/mix/on/set": oscMapToButtonTarget('/ch/09/mix/on'),
+    "/ch/13/mix/on/set": oscMapToButtonTarget('/ch/13/mix/on'),
+    "/ch/15/mix/on/set": oscMapToButtonTarget('/ch/15/mix/on')
   }
 };
 
