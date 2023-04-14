@@ -39,11 +39,11 @@ const oscMapToFloatFromPathMax = (path) => ({
   }
 });
 
-const oscToMidiCcCommandFactory = (controller, channel) => (value) => ({
+const oscToMidiCcCommandFactory = (controller, channel, positiveVal, zeroVal) => (value) => ({
   "_type": "cc",
   "data": {
     "controller": controller,
-    "value": value > 0 ? 127 : 0,
+    "value": value > 0 ? (positiveVal || value) : (zeroVal || 0),
     "channel": (channel || 0)
   }
 });
@@ -139,17 +139,33 @@ mappings = {
         "2": oscMapToFloatTarget('/ch/05/mix/fader'),
         "3": oscMapToFloatTarget('/ch/09/mix/fader'),
         "4": oscMapToFloatTarget('/ch/13/mix/fader'),
-        "5": oscMapToFloatTarget('/ch/15/mix/fader')
-      }
+        "5": oscMapToFloatTarget('/ch/15/mix/fader'),
+        // Buttons are CCs here
+        // First vertical 3 button codes: 32, 48, 64
+        "32": oscMapToButtonTarget('/-stat/solosw/01'),
+        "33": oscMapToButtonTarget('/-stat/solosw/03'),
+        "34": oscMapToButtonTarget('/-stat/solosw/05'),
+        "35": oscMapToButtonTarget('/-stat/solosw/09'),
+        "36": oscMapToButtonTarget('/-stat/solosw/13'),
+        "37": oscMapToButtonTarget('/-stat/solosw/15')
+      },
     }
   },
   "osc": {
-    "/ch/01/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
-    "/ch/03/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
-    "/ch/05/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ],
-    "/ch/09/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(46)), mqttPublish('/ch/09/mix/on') ],
-    "/ch/13/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(50)), mqttPublish('/ch/13/mix/on') ],
-    "/ch/15/mix/on": [ midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(51)), mqttPublish('/ch/15/mix/on') ]
+    // MUTE handlers
+    "/ch/01/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(48, 0, 1)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(44)), mqttPublish('/ch/01/mix/on') ],
+    "/ch/03/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(49, 0, 1)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(45)), mqttPublish('/ch/03/mix/on') ],
+    "/ch/05/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(50, 0, 1)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(47)), mqttPublish('/ch/05/mix/on') ],
+    "/ch/09/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(51, 0, 1)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(46)), mqttPublish('/ch/09/mix/on') ],
+    "/ch/13/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(52, 0, 1)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(50)), mqttPublish('/ch/13/mix/on') ],
+    "/ch/15/mix/on": [ midiSendCc("nanoKONTROL2", oscToMidiCcCommandFactory(53, 0, 1)), midiSendNoteOn("LPD8", oscToMidiNoteOnCommandFactory(51)), mqttPublish('/ch/15/mix/on') ],
+    // SOLO handlers
+    "/-stat/solosw/01": midiSendNoteOn("nanoKONTROL2", oscToMidiCcCommandFactory(32)),
+    "/-stat/solosw/03": midiSendNoteOn("nanoKONTROL2", oscToMidiCcCommandFactory(33)),
+    "/-stat/solosw/05": midiSendNoteOn("nanoKONTROL2", oscToMidiCcCommandFactory(34)),
+    "/-stat/solosw/09": midiSendNoteOn("nanoKONTROL2", oscToMidiCcCommandFactory(35)),
+    "/-stat/solosw/13": midiSendNoteOn("nanoKONTROL2", oscToMidiCcCommandFactory(36)),
+    "/-stat/solosw/15": midiSendNoteOn("nanoKONTROL2", oscToMidiCcCommandFactory(37))    
   },
   "mqtt": {
     "/ch/01/mix/on/set": oscMapToButtonTarget('/ch/01/mix/on'),
