@@ -178,7 +178,14 @@ mappings = {
         "50": oscMapToButtonTarget('/ch/05/mix/on', '0', '1'),
         "51": oscMapToButtonTarget('/ch/09/mix/on', '0', '1'),
         "52": oscMapToButtonTarget('/ch/13/mix/on', '0', '1'),
-        "53": oscMapToButtonTarget('/ch/15/mix/on', '0', '1')
+        "53": oscMapToButtonTarget('/ch/15/mix/on', '0', '1'),
+        // RECORD
+        "64": oscMapToButtonTarget('/ch/01/mix/on'),
+        "65": oscMapToButtonTarget('/ch/03/mix/on'),
+        "66": oscMapToButtonTarget('/ch/05/mix/on'),
+        "67": oscMapToButtonTarget('/ch/09/mix/on'),
+        "68": oscMapToButtonTarget('/ch/13/mix/on'),
+        "69": oscMapToButtonTarget('/ch/15/mix/on')
       },
     }
   },
