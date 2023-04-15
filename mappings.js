@@ -1,24 +1,29 @@
 var state = {};
 var mappings = {};
-var _blinkFuncs = {};
 
-const _removeBlinkFunc = id => {
-  const index = _blinkFuncs.indexOf(id);
+var _blinkFuncs = [];
+
+const _removeBlinkFunc = item => {
+  const index = _blinkFuncs.indexOf(item);
+  if (index > -1) _blinkFuncs.splice(index, 1);
+};
+
+const _removeBlinkFuncById = id => {
+  const index = _blinkFuncs.findIndex(x => x.id == id);
   if (index > -1) _blinkFuncs.splice(index, 1);
 };
 
 const _blinkHandler = (val, interval) => {
-  for (var i in _blinkFuncs) 
-    if (!!_blinkFuncs[i]) {
-      try {
-        _blinkFuncs[i](val);
-      }
-      catch (e) {
-        console.log('BLINK: Exception during executing blink function: id=' + i, e);
-        _removeBlinkFunc(i);
-      }
+  _blinkFuncs.forEach(b => {
+    try {
+      b.func(val);
     }
-  
+    catch (e) {
+      console.log('BLINK: Exception during executing blink function: id=' + b.id, e);
+      _removeBlinkFunc(b);
+    }
+  }
+                      
   setTimeout(_blinkHandler, interval, !val, interval);
 };
 _blinkHandler(true, 666);
@@ -29,13 +34,14 @@ const blink = (id, func, offValue) => value => {
     return _ => {};
   }
   
+  _removeBlinkFuncById(id);
+
   if (offValue == 'undefined') offValue = !value;
   if (value == offValue || value == 'undefined' || value == 'NaN' || value == undefined || value == NaN) {
-    _removeBlinkFunc(id);
     return func(offValue);
   }
   
-  _blinkFuncs[id] = v => func(v ? value : offValue);
+  _blinkFuncs.push({ id: id, func: v => func(v ? value : offValue) });
   
   return func(value);
 };
