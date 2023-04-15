@@ -1,28 +1,41 @@
 var state = {};
 var mappings = {};
-var _blinkingQueue = {};
+var _blinkFuncs = {};
 
-const _blinkFunc = (val, interval) => {
-  for (var i in _blinkingQueue) 
-    if (!!_blinkingQueue[i])
-      _blinkingQueue[i](val);
-  
-  setTimeout(_blinkFunc, interval, !val, interval);
+const _removeBlinkFunc = id => {
+  const index = _blinkFuncs.indexOf(id);
+  if (index > -1) _blinkFuncs.splice(index, 1);
 };
-_blinkFunc(true, 666);
+
+const _blinkHandler = (val, interval) => {
+  for (var i in _blinkFuncs) 
+    if (!!_blinkFuncs[i]) {
+      try {
+        _blinkFuncs[i](val);
+      }
+      catch (e) {
+        console.log('BLINK: Exception during executing blink function: id=' + i, e);
+        _removeBlinkFunc(i);
+      }
+    }
+  
+  setTimeout(_blinkHandler, interval, !val, interval);
+};
+_blinkHandler(true, 666);
 
 const blink = (id, func, offValue) => value => {
-  if (!id || !func) return;
-  if (!value) {
-    _blinkingQueue[id] = null;
-    return func(value);
+  if (!id || !func || typeof(func) != 'function') {
+    console.log('BLINK: Invalid setup parameters!', id, func, offValue);
+    return _ => {};
   }
   
   if (offValue == 'undefined') offValue = !value;
-  _blinkingQueue[id] = v => {
-    if (v != 'undefined' && value != 'undefined') func(v ? value : offValue);
-    else _blinkingQueue[id] = null;
-  };
+  if (value == offValue || value == 'undefined' || value == 'NaN' || value == undefined || value == NaN) {
+    _removeBlinkFunc(id);
+    return func(offValue);
+  }
+  
+  _blinkFuncs[id] = v => func(v ? value : offValue);
   
   return func(value);
 };
