@@ -19,7 +19,10 @@ const blink = (id, func, offValue) => value => {
   }
   
   if (offValue == 'undefined') offValue = !value;
-  _blinkingQueue[id] = v => func(v ? value : offValue);
+  _blinkingQueue[id] = v => {
+    if (v != 'undefined' && value != 'undefined') func(v ? value : offValue);
+    else _blinkingQueue[id] = null;
+  };
   
   return func(value);
 };
