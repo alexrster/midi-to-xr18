@@ -36,7 +36,7 @@ const blink = (id, func, offValue) => value => {
   
   _removeBlinkFuncById(id);
 
-  if (offValue == 'undefined') offValue = !value;
+  if (offValue == 'undefined' || offValue == undefined) offValue = !value;
   if (value == offValue || value == 'undefined' || value == 'NaN' || value == undefined || value == NaN) {
     return func(offValue);
   }
