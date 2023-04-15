@@ -14,7 +14,7 @@ const _removeBlinkFuncById = id => {
 };
 
 const _blinkHandler = (val, interval) => {
-  _blinkFuncs.forEach(b => {
+  _blinkFuncs.forEach(b => 
     try {
       b.func(val);
     }
@@ -22,7 +22,7 @@ const _blinkHandler = (val, interval) => {
       console.log('BLINK: Exception during executing blink function: id=' + b.id, e);
       _removeBlinkFunc(b);
     }
-  }
+  );
                       
   setTimeout(_blinkHandler, interval, !val, interval);
 };
