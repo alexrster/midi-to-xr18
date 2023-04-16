@@ -185,6 +185,7 @@ mappings = {
         "3": oscMapToFloatTarget('/ch/09/mix/fader'),
         "4": oscMapToFloatTarget('/ch/13/mix/fader'),
         "5": oscMapToFloatTarget('/ch/15/mix/fader'),
+        "6": [ oscMapToFloatTarget('/ch/13/mix/01/level'), oscMapToFloatTarget('/ch/15/mix/01/level') ],
         // Buttons are CCs
         // First vertical 3 button codes: 32, 48, 64
         // SOLO
