@@ -60,6 +60,8 @@ const oscMapToFloatTarget = (path, conv, max) => ({
   }
 });
 
+const oscMapsToFloatTarget = (pathArray, conv, max) => pathArray.forEach(p => oscMapToFloatTarget(p, conv, max));
+
 const oscMapToFloatMaxTarget = (path, max) => oscMapToFloatTarget(path, undefined, max);
 
 const oscMapToConstTarget = (path, val) => ({
@@ -185,7 +187,7 @@ mappings = {
         "3": oscMapToFloatTarget('/ch/09/mix/fader'),
         "4": oscMapToFloatTarget('/ch/13/mix/fader'),
         "5": oscMapToFloatTarget('/ch/15/mix/fader'),
-        "6": [ oscMapToFloatTarget('/ch/13/mix/01/level'), oscMapToFloatTarget('/ch/15/mix/01/level') ],
+        "6": oscMapsToFloatTarget([ '/ch/13/mix/01/level', '/ch/15/mix/01/level' ]),
         // Buttons are CCs
         // First vertical 3 button codes: 32, 48, 64
         // SOLO
