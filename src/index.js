@@ -8,8 +8,8 @@ const mqtt = require('mqtt');
 const optionDefinitions = [
   { name: 'mappings', alias: 'm', type: String, defaultOption: true, defaultValue: '../mappings.js' },
   { name: 'midi-list-devices', alias: 'l', type: Boolean },
-  { name: 'midi-device', alias: 'd', type: String, defaultValue: 'WORLDE easy CTRL' },
-  { name: 'midi-out-device', alias: 'o', type: String, defaultValue: 'WORLDE easy CTRL:WORLDE easy CTRL MIDI 1 24:0' },
+  { name: 'midi-device', alias: 'd', type: String, defaultValue: 'nanoKONTROL' },
+  { name: 'midi-out-device', alias: 'o', type: String, defaultValue: 'nanoKONTROL' },
   { name: 'xr18-address', alias: 'a', type: String, defaultValue: '10.9.9.215' },
   { name: 'xr18-port', alias: 'p', type: Number, defaultValue: 10024 },
   { name: 'mqtt-url', alias: 'b', type: String, defaultValue: 'tcp://rabbitmq.in.qx.zone:1883' },
@@ -85,7 +85,7 @@ function getMidiIn(name) {
 function getMidiOut(name) {
   if (!!name) {
     if (!!midiOuts[name]) {
-      console.log("Resolve MIDI output device from cache: name=" + name + "; device=" + midiOuts[name]);
+      console.log("Resolved MIDI output device from cache: name=" + name);
       return midiOuts[name];
     }
 
@@ -254,7 +254,7 @@ udpPort.on("close", () => {
 // MQTT
 var subsriptions = {};
 pubSub = mqtt.connect(args['mqtt-url'], { clientId: "midi-to-xr18" });
-pubSub.on('connect', () => {
+pubSub.once('connect', () => {
   console.log('MQTT connected!');
 
   for (var d in mappings.mqtt) {
